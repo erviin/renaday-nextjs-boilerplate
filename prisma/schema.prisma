@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RateType {
+  HOURLY
+  WEEKLY
+  MONTHLY
+}
+
+enum RoleType {
+  PROJECT_OWNER
+  PROFESIONAL
+}
+
+enum Role {
+  WORKER
+  BUSINESS
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement()) // Unique identifier
+  userId    String // Reference to the user receiving the notification
+  title     String // Title of the notification
+  message   String // Message content
+  url       String // Message content
+  type      String // Type of notification (e.g., 'info', 'warning', 'error')
+  isRead    Boolean  @default(false) // Indicates whether the notification is read
+  createdAt DateTime @default(now()) // Timestamp of when the notification was created
+  updatedAt DateTime @updatedAt // Timestamp of the last update
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId]) // Index for efficient queries
+}
+
+model DirectContract {
+  id                   String    @id @default(cuid()) // Unique ID for the contract
+  projectName          String // Name of the project
+  ownerRole            RoleType? // Role name (optional)
+  employerEmail        String // Email of the employer
+  employerEmailId      String? // Email of the employer
+  employerEmailData    User?     @relation(fields: [employerEmailId], references: [id], name: "employerEmailId")
+  employeeEmail        String // Email of the employee
+  employeeEmailId      String? // Email of the employer
+  employeeEmailData    User?     @relation(fields: [employeeEmailId], references: [id], name: "employeeEmailId")
+  ownerEmail           String // Email of the employee
+  ownerEmailId         String // Email of the employer
+  ownerEmailData       User?     @relation(fields: [ownerEmailId], references: [id], name: "ownerEmailId")
+  projectDescription   String? // Description of the project (optional)
+  rate                 Float // Rate of payment
+  rateType             RateType // Type of rate: hourly or monthly
+  createdAt            DateTime  @default(now()) // Timestamp for when the contract is created
+  isAccepted           Boolean   @default(false) // Whether the invitation is already accepted or no
+  acceptedBy           String? // the email who accept the invitation
+  acceptedAt           DateTime? // Timestamp for when the contract is accepted
+  isEnded              Boolean   @default(false) // whether the contract is already terminated or no
+  endedBy              String? // the email who terminate the contract
+  endedAt              DateTime? // Timestamp for when the contract is ended
+  endedReason          String? // the reason of ending the contract
+  isOnChain            Boolean   @default(false) // whether the contract is already onchain or no
+  onChainDeployerEmail String? // the deployer email
+  onChainTx            String? // Tx ID when it deployed to chain
+  onChainAt            DateTime? // Timestamp for when the contract is on chain
+  onChainCurrentFund   Float     @default(0) // Ron chain current fund
+}
+
+model User {
+  id                    String           @id @default(cuid())
+  email                 String           @unique
+  name                  String?
+  image                 String?
+  googleId              String? // Optional, but useful for associating Google accounts
+  role                  Role             @default(WORKER) // Role: WORKER or BUSINESS
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  // Relationships
+  workerProfile         WorkerProfile? // Nullable, only for WORKER role
+  businessProfile       BusinessProfile? // Nullable, only for BUSINESS role
+  MyDirectContracts     DirectContract[] @relation("ownerEmailId")
+  DirectContractWorkFor DirectContract[] @relation("employeeEmailId")
+  DirectContractMyTeam  DirectContract[] @relation("employerEmailId")
+  Notification          Notification[]
+}
+
+model WorkerProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  skills       String[] // Array of skills
+  experience   String? // Brief about their experience
+  hourlyRate   Float? // Worker’s hourly rate
+  availability Boolean  @default(true) // Whether they are currently available
+}
+
+model BusinessProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  user        User    @relation(fields: [userId], references: [id])
+  companyName String // Business/Company name
+  industry    String? // Industry type
+  website     String? // Business website
+  description String? // About the business
+}
