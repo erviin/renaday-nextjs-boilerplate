@@ -1,3 +1,8 @@
+# DEMO
+[Youtube](https://youtu.be/mR5rdCzmbOs)
+#
+[Website](https://renaday.com)
+
 # renaday-nextjs-boilerplate
 Renaday - Corresponding Pelita Bangsa x LISK bootcamp
 
